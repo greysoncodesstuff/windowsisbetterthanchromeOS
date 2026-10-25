@@ -23,6 +23,7 @@
             --fern: #22c55e;
             --strawberri: #ec4899;
             --tungtung: #f97316;
+            --studyhub: #6366f1;
             --partner-gold: #ffd700;
             --partner-bg: #1a1a2e;
         }
@@ -315,7 +316,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* CRITICAL FIX: Added pointer-events: none */
         .card-3d::after {
             content: '';
             position: absolute;
@@ -334,7 +334,6 @@
             100% { left: 150%; }
         }
 
-        /* Make sure card content sits above the ::after sweep */
         .card-3d > * {
             position: relative;
             z-index: 2;
@@ -504,7 +503,6 @@
             to { transform: scaleX(1); }
         }
 
-        /* Button container */
         .buttons-container {
             display: flex;
             flex-direction: column;
@@ -842,7 +840,6 @@
             pointer-events: none;
         }
 
-        /* Use an anchor tag styled as button for reliable redirects */
         .partner-visit-btn {
             display: inline-flex;
             align-items: center;
@@ -1048,6 +1045,7 @@
         .proxy-card:nth-child(3) { animation-delay: 0.3s; --accent-color: var(--fern); }
         .proxy-card:nth-child(4) { animation-delay: 0.4s; --accent-color: var(--strawberri); }
         .proxy-card:nth-child(5) { animation-delay: 0.5s; --accent-color: var(--tungtung); }
+        .proxy-card:nth-child(6) { animation-delay: 0.6s; --accent-color: var(--studyhub); }
 
         @keyframes cardAppear {
             to { opacity: 1; transform: translateY(0); }
@@ -1667,12 +1665,13 @@
                     <h2>Unblocked School Proxies</h2>
                     <p>Select a proxy to launch</p>
                     <div class="proxies-count">
-                        <span class="dot"></span>5 PROXIES ONLINE
+                        <span class="dot"></span>6 PROXIES ONLINE
                     </div>
                 </div>
 
                 <div class="proxies-grid">
                     
+                    <!-- Cherri -->
                     <div class="proxy-card">
                         <div class="proxy-header">
                             <div class="proxy-icon">🍒</div>
@@ -1692,6 +1691,7 @@
                         </a>
                     </div>
 
+                    <!-- Aether -->
                     <div class="proxy-card">
                         <div class="proxy-header">
                             <div class="proxy-icon">✨</div>
@@ -1711,6 +1711,7 @@
                         </a>
                     </div>
 
+                    <!-- Fern -->
                     <div class="proxy-card">
                         <div class="proxy-header">
                             <div class="proxy-icon">🌿</div>
@@ -1730,6 +1731,7 @@
                         </a>
                     </div>
 
+                    <!-- Strawberri -->
                     <div class="proxy-card">
                         <div class="proxy-header">
                             <div class="proxy-icon">🍓</div>
@@ -1749,6 +1751,7 @@
                         </a>
                     </div>
 
+                    <!-- Tung Tung -->
                     <div class="proxy-card">
                         <div class="proxy-header">
                             <div class="proxy-icon">🥁</div>
@@ -1764,6 +1767,26 @@
                             <span class="proxy-tag">S3</span>
                         </div>
                         <a href="https://s3.amazonaws.com/jse72q6/index.html" target="_blank" rel="noopener noreferrer" class="proxy-launch">
+                            LAUNCH <span class="launch-arrow">→</span>
+                        </a>
+                    </div>
+
+                    <!-- Study Hub (NEW) -->
+                    <div class="proxy-card">
+                        <div class="proxy-header">
+                            <div class="proxy-icon">📚</div>
+                            <div class="proxy-info">
+                                <div class="proxy-name">Study Hub</div>
+                                <div class="proxy-number">BUTTON 06</div>
+                            </div>
+                        </div>
+                        <p class="proxy-desc">Academic-grade stealth. Looks like a study resource to filters.</p>
+                        <div class="proxy-tags">
+                            <span class="proxy-tag">EDUCATIONAL</span>
+                            <span class="proxy-tag">STEALTH</span>
+                            <span class="proxy-tag">S3</span>
+                        </div>
+                        <a href="https://s3.amazonaws.com/kj0e/index.html" target="_blank" rel="noopener noreferrer" class="proxy-launch">
                             LAUNCH <span class="launch-arrow">→</span>
                         </a>
                     </div>
