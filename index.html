@@ -247,7 +247,7 @@ h1::after{color:var(--accent);animation:glitch2 3s infinite;clip-path:polygon(0 
 <div class="cursor" id="cursor"></div><div class="cursor-dot" id="cursorDot"></div>
 <div class="hud-corner hud-top-left"><span>SYS: ONLINE</span><span id="currentTime">00:00:00</span><span>PROXY: ACTIVE</span></div>
 <div class="hud-corner hud-top-right"><span>BANDWIDTH: 100%</span><span id="syncStatus">SYNC: LOCAL</span><span>NODE: SECURE</span></div>
-<div class="hud-corner hud-bottom-left"><span id="visitorCount">VISITORS: 0</span><span>UPTIME: 99.9%</span><span>v7.0.0-JB</span></div>
+<div class="hud-corner hud-bottom-left"><span id="visitorCount">VISITORS: 0</span><span>UPTIME: 99.9%</span><span>v7.1.0-JB</span></div>
 <div class="hud-corner hud-bottom-right"><span>ENCRYPTION: AES-256</span><span>FIREWALL: BYPASSED</span><span id="adminStatusHud">STATUS: USER</span></div>
 <div class="sound-toggle" id="soundToggle">🔊</div>
 <div class="toast" id="toast"></div>
@@ -334,11 +334,11 @@ h1::after{color:var(--accent);animation:glitch2 3s infinite;clip-path:polygon(0 
                 <div class="sync-box">
                     <p>
                         <strong style="color:var(--partner-gold)">SETUP (one time):</strong><br>
-                        1. Click <strong>"✨ CREATE NEW BLOB"</strong> below (auto-creates your cloud storage), OR<br>
-                        2. Go to <a href="https://jsonblob.com" target="_blank">jsonblob.com</a> → "Create a JSON Blob" → copy the URL and paste it below.<br><br>
-                        Once connected, <strong style="color:var(--primary)">every change you make syncs to ALL devices in ~3 seconds</strong> — no refresh needed. Your blob URL is saved, so it auto-connects every time you open the site.
+                        1. Paste your jsonblob URL below (from jsonblob.com → your blob), then click <strong>CONNECT</strong>.<br>
+                        2. Or click <strong>"✨ CREATE NEW BLOB"</strong> to auto-create one.<br><br>
+                        Once connected, <strong style="color:var(--primary)">every change syncs to ALL devices in ~3 seconds</strong> — no refresh needed. Your blob URL is saved and auto-connects every visit.
                     </p>
-                    <input type="text" class="admin-input" id="jsonblobUrl" placeholder="https://jsonblob.com/YOUR_BLOB_ID" style="margin-bottom:10px">
+                    <input type="text" class="admin-input" id="jsonblobUrl" placeholder="https://jsonblob.com/YOUR-BLOB-ID" style="margin-bottom:10px">
                     <div style="display:flex;gap:10px;flex-wrap:wrap">
                         <button class="admin-action-btn success" onclick="connectJsonblob(false)">🔌 CONNECT</button>
                         <button class="admin-action-btn" onclick="createJsonblob()">✨ CREATE NEW BLOB</button>
@@ -488,7 +488,7 @@ let isAdmin = false;
 let soundEnabled = true;
 let audioCtx; try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ soundEnabled=false; }
 
-// ================= JSONBLOB SYNC =================
+// ================= JSONBLOB SYNC (FIXED) =================
 let jbConnected=false, jbId=null, jbPollTimer=null, jbLastPush=0;
 
 function jbLog(msg){
@@ -499,14 +499,13 @@ function jbLog(msg){
     el.scrollTop=el.scrollHeight;
 }
 
+// FIXED: now matches full UUIDs with dashes (e.g. 01a1763f-7ead-7ba1-9e2a-9a70804ba9e1)
 function extractJbId(url){
-    const m=String(url).match(/jsonblob\.com\/(?:api\/jsonBlob\/)?([a-zA-Z0-9]{8,})/);
+    const m=String(url).match(/jsonblob\.com\/(?:api\/jsonBlob\/)?([\w-]{20,})/);
     return m?m[1]:null;
 }
 
-function sanitize(s){
-    const c={...s}; delete c.isAdmin; return c;
-}
+function sanitize(s){ const c={...s}; delete c.isAdmin; return c; }
 
 function updateSyncUI(on){
     const box=document.getElementById('syncStatusBox');
@@ -538,7 +537,7 @@ async function connectJsonblob(auto){
         if(input)input.value=url;
         updateSyncUI(true);
         jbLog('Connected to blob '+id);
-        if(data&&typeof data==='object'&&Object.keys(data).length){ ingestRemote(data,true); }
+        if(data&&typeof data==='object'&&!Array.isArray(data)&&Object.keys(data).length){ ingestRemote(data,true); }
         startJbPoll();
         if(!auto){ showToast('✅ Connected to jsonblob!','success'); playSuccessSound(); }
         return true;
@@ -559,7 +558,7 @@ async function createJsonblob(){
         });
         if(!res.ok) throw new Error('HTTP '+res.status);
         const loc=res.headers.get('Location')||res.headers.get('location')||'';
-        const m=loc.match(/([a-zA-Z0-9]{8,})\s*$/);
+        const m=loc.match(/([\w-]{8,})\s*$/);   // FIXED: keeps dashes
         if(!m) throw new Error('No blob ID in response');
         jbId=m[1];
         const url='https://jsonblob.com/'+jbId;
@@ -568,11 +567,11 @@ async function createJsonblob(){
         jbConnected=true; updateSyncUI(true);
         startJbPoll();
         jbLog('Created blob '+jbId);
-        showToast('✅ Blob created! Share this site — everyone syncs now','success');
+        showToast('✅ Blob created! All devices will sync now','success');
         playSuccessSound();
     }catch(e){
-        showToast('❌ Create failed: '+e.message,'error');
-        jbLog('Create failed: '+e.message);
+        jbLog('Create failed: '+e.message+' (create one manually at jsonblob.com instead)');
+        showToast('❌ Auto-create blocked — create one at jsonblob.com & paste URL','error');
     }
 }
 
@@ -610,7 +609,7 @@ function startJbPoll(){
     if(jbPollTimer)clearInterval(jbPollTimer);
     jbPollTimer=setInterval(async()=>{
         if(!jbConnected||!jbId)return;
-        if(Date.now()-jbLastPush<4000)return; // ignore own echo
+        if(Date.now()-jbLastPush<4000)return; // ignore own echo right after pushing
         try{
             const res=await fetch(JB_API+jbId,{headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
             if(!res.ok)return;
@@ -635,7 +634,7 @@ function saveLocal(){ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state
 function loadLocal(){ try{ const s=localStorage.getItem(STORAGE_KEY); if(s)state={...state,...JSON.parse(s)}; }catch(e){} }
 
 function ingestRemote(data,silent){
-    if(!data||typeof data!=='object')return;
+    if(!data||typeof data!=='object'||Array.isArray(data))return;
     const merged={...state,...data};
     if(JSON.stringify(sanitize(merged))===JSON.stringify(sanitize(state)))return;
     state=merged;
@@ -720,7 +719,9 @@ function loadAdminPanel(){
     document.getElementById('maintenanceMsgInput').value=state.maintenanceMsg;
     document.getElementById('primaryPreview').style.background=state.primaryColor;
     document.getElementById('secondaryPreview').style.background=state.secondaryColor;
-    const saved=localStorage.getItem(JB_URL_KEY); if(saved&&!document.getElementById('jsonblobUrl').value)document.getElementById('jsonblobUrl').value=saved;
+    const saved=localStorage.getItem(JB_URL_KEY);
+    const jbInput=document.getElementById('jsonblobUrl');
+    if(saved&&!jbInput.value)jbInput.value=saved;
     Object.keys(state.effects).forEach(k=>{const el=document.getElementById('toggle'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.classList.toggle('active',state.effects[k]);});
     document.getElementById('maintenanceStatus').textContent=state.maintenance?'🔒 ON':'✅ OFF';
     renderAdminProxyList();
@@ -892,7 +893,7 @@ function updateLoading(){
             document.getElementById('loadingScreen').classList.add('hidden');
             loadLocal();
             applyState();
-            connectJsonblob(true); // auto-connect if saved
+            connectJsonblob(true); // auto-connect if a blob URL was saved
             startTypingSubtitle();
         },500);
     }
@@ -975,7 +976,7 @@ function redirectToWolf(){playClickSound();document.body.style.transition='backg
 
 document.getElementById('soundToggle').addEventListener('click',()=>{
     state.effects.sounds=!state.effects.sounds; soundEnabled=state.effects.sounds; saveLocal();
-    document.getElementById('soundToggle').textContent=soundEnabled?'🔊':'🔇';
+    document.getElementById('soundToggle').textContent=soundEnabled?'🔊':'';
     const t=document.getElementById('toggleSounds'); if(t)t.classList.toggle('active',soundEnabled);
 });
 
