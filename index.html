@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#00ff88;--secondary:#00ccff;--accent:#ff00ff;--darker:#050508;--cherri:#ff2e63;--aether:#a855f7;--fern:#22c55e;--strawberri:#ec4899;--tungtung:#f97316;--studyhub:#6366f1;--petezah:#e76f51;--bull33:#dc2626;--niche:#14b8a6;--partner-gold:#ffd700;--admin-red:#ef4444}
+:root{--primary:#00ff88;--secondary:#00ccff;--accent:#ff00ff;--darker:#050508;--cherri:#ff2e63;--aether:#a855f7;--fern:#22c55e;--strawberri:#ec4899;--tungtung:#f97316;--studyhub:#6366f1;--petezah:#e76f51;--bull33:#dc2626;--niche:#14b8a6;--astra:#7c3aed;--partner-gold:#ffd700;--admin-red:#ef4444}
 body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--darker);font-family:'Rajdhani',sans-serif;overflow-x:hidden;cursor:none}
 .cursor{position:fixed;width:20px;height:20px;border:2px solid var(--primary);border-radius:50%;pointer-events:none;z-index:9999;transition:width .3s,height .3s,border-color .3s;mix-blend-mode:difference}
 .cursor-dot{position:fixed;width:6px;height:6px;background:var(--primary);border-radius:50%;pointer-events:none;z-index:9999}
@@ -247,7 +247,7 @@ h1::after{color:var(--accent);animation:glitch2 3s infinite;clip-path:polygon(0 
 <div class="cursor" id="cursor"></div><div class="cursor-dot" id="cursorDot"></div>
 <div class="hud-corner hud-top-left"><span>SYS: ONLINE</span><span id="currentTime">00:00:00</span><span>PROXY: ACTIVE</span></div>
 <div class="hud-corner hud-top-right"><span>BANDWIDTH: 100%</span><span id="syncStatus">SYNC: LOCAL</span><span>NODE: SECURE</span></div>
-<div class="hud-corner hud-bottom-left"><span id="visitorCount">VISITORS: 0</span><span>UPTIME: 99.9%</span><span>v7.1.0-JB</span></div>
+<div class="hud-corner hud-bottom-left"><span id="visitorCount">VISITORS: 0</span><span>UPTIME: 99.9%</span><span>v7.2.0-JB</span></div>
 <div class="hud-corner hud-bottom-right"><span>ENCRYPTION: AES-256</span><span>FIREWALL: BYPASSED</span><span id="adminStatusHud">STATUS: USER</span></div>
 <div class="sound-toggle" id="soundToggle">🔊</div>
 <div class="toast" id="toast"></div>
@@ -299,7 +299,7 @@ h1::after{color:var(--accent);animation:glitch2 3s infinite;clip-path:polygon(0 
     <div class="view" id="proxiesView">
         <div class="proxies-card">
             <button class="back-btn" onclick="showMainView()">← BACK</button>
-            <div class="proxies-header"><h2>Unblocked School Proxies</h2><p>Select a proxy to launch</p><div class="proxies-count"><span class="dot"></span><span id="proxiesCountText">9 PROXIES ONLINE</span></div></div>
+            <div class="proxies-header"><h2>Unblocked School Proxies</h2><p>Select a proxy to launch</p><div class="proxies-count"><span class="dot"></span><span id="proxiesCountText">10 PROXIES ONLINE</span></div></div>
             <div class="proxies-grid" id="proxiesGrid"></div>
         </div>
     </div>
@@ -472,7 +472,8 @@ const DEFAULT_PROXIES = [
     {name:'Study Hub',url:'https://s3.amazonaws.com/kj0e/index.html',emoji:'📚',desc:'Academic-grade stealth. Looks like a study resource to filters.',tags:['EDUCATIONAL','STEALTH','S3'],color:'#6366f1'},
     {name:'Petezah',url:'https://cdn.jsdelivr.net/gh/lyra-proxy/Pete-learning@main/index.svg',emoji:'🍕',desc:'Hot & delicious. Served fresh from the CDN oven.',tags:['PIZZA','FRESH','CDN'],color:'#e76f51'},
     {name:'Bull-33',url:'https://s3.amazonaws.com/bullpxbk/index.svg',emoji:'🐂',desc:'Raw power unleashed. Charges through any filter.',tags:['POWERFUL','AGGRESSIVE','S3'],color:'#dc2626'},
-    {name:'Niche',url:'https://cdn.jsdelivr.net/gh/algebra2day/calculus@main/svg/onefile.svg',emoji:'📐',desc:'Mathematical precision. Disguised as calculus.',tags:['MATH','CLEVER','CDN'],color:'#14b8a6'}
+    {name:'Niche',url:'https://cdn.jsdelivr.net/gh/algebra2day/calculus@main/svg/onefile.svg',emoji:'📐',desc:'Mathematical precision. Disguised as calculus.',tags:['MATH','CLEVER','CDN'],color:'#14b8a6'},
+    {name:'Astra',url:'https://s3.amazonaws.com/learn-for-free/index.html',emoji:'🌟',desc:'Cosmic-level stealth. Travels through filters like light through space.',tags:['COSMIC','STEALTH','S3'],color:'#7c3aed'}
 ];
 
 let state = {
@@ -488,24 +489,62 @@ let isAdmin = false;
 let soundEnabled = true;
 let audioCtx; try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ soundEnabled=false; }
 
-// ================= JSONBLOB SYNC (FIXED) =================
-let jbConnected=false, jbId=null, jbPollTimer=null, jbLastPush=0;
+// ================= JSONBLOB SYNC (MULTI-ENDPOINT) =================
+let jbConnected=false, jbId=null, jbPollTimer=null, jbLastPush=0, jbReadBase=null;
 
 function jbLog(msg){
     const el=document.getElementById('syncLog'); if(!el)return;
     const t=new Date().toLocaleTimeString('en-US',{hour12:false});
     const line='['+t+'] '+msg;
-    el.innerHTML = (el.innerHTML==='[sync log empty]'?'':el.innerHTML+'<br>')+line;
+    el.innerHTML=(el.innerHTML==='[sync log empty]'?'':el.innerHTML+'<br>')+line;
     el.scrollTop=el.scrollHeight;
 }
 
-// FIXED: now matches full UUIDs with dashes (e.g. 01a1763f-7ead-7ba1-9e2a-9a70804ba9e1)
 function extractJbId(url){
     const m=String(url).match(/jsonblob\.com\/(?:api\/jsonBlob\/)?([\w-]{20,})/);
     return m?m[1]:null;
 }
 
 function sanitize(s){ const c={...s}; delete c.isAdmin; return c; }
+
+function jbEndpoints(id){
+    return [
+        'https://jsonblob.com/api/jsonBlob/'+id,
+        'https://jsonblob.com/api/blob/'+id,
+        'https://jsonblob.com/'+id+'/json',
+        'https://jsonblob.com/'+id
+    ];
+}
+
+async function jbRead(id){
+    for(const base of jbEndpoints(id)){
+        try{
+            const r=await fetch(base,{headers:{'Accept':'application/json'}});
+            if(!r.ok){ jbLog('GET '+base+' -> '+r.status); continue; }
+            const txt=await r.text();
+            let data; try{ data=JSON.parse(txt); }catch(e){ continue; }
+            if(data&&typeof data==='object'&&!Array.isArray(data)){
+                jbReadBase=base;
+                jbLog('READ OK via '+base);
+                return {ok:true,data};
+            }
+        }catch(e){ jbLog('GET '+base+' -> blocked'); }
+    }
+    return {ok:false};
+}
+
+async function jbWrite(id,payload){
+    const body=JSON.stringify(payload);
+    const bases = jbReadBase ? [jbReadBase,...jbEndpoints(id).filter(b=>b!==jbReadBase)] : jbEndpoints(id);
+    for(const base of bases){
+        try{
+            const r=await fetch(base,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json'},body});
+            if(r.ok){ jbLog('WRITE OK via '+base); return {ok:true}; }
+            jbLog('PUT '+base+' -> '+r.status);
+        }catch(e){ jbLog('PUT '+base+' -> blocked'); }
+    }
+    return {ok:false};
+}
 
 function updateSyncUI(on){
     const box=document.getElementById('syncStatusBox');
@@ -528,105 +567,77 @@ async function connectJsonblob(auto){
     const id=extractJbId(url);
     if(!id){ if(!auto)showToast('❌ Invalid jsonblob URL','error'); return false; }
     jbId=id;
-    try{
-        const res=await fetch(JB_API+id,{headers:{'Accept':'application/json'}});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const data=await res.json();
+    const result=await jbRead(id);
+    if(result.ok){
         jbConnected=true;
         localStorage.setItem(JB_URL_KEY,url);
         if(input)input.value=url;
         updateSyncUI(true);
         jbLog('Connected to blob '+id);
-        if(data&&typeof data==='object'&&!Array.isArray(data)&&Object.keys(data).length){ ingestRemote(data,true); }
+        if(Object.keys(result.data).length) ingestRemote(result.data,true);
         startJbPoll();
         if(!auto){ showToast('✅ Connected to jsonblob!','success'); playSuccessSound(); }
         return true;
-    }catch(e){
-        jbConnected=false; updateSyncUI(false);
-        jbLog('Connect failed: '+e.message);
-        if(!auto)showToast('❌ jsonblob error: '+e.message,'error');
-        return false;
     }
+    jbConnected=false; updateSyncUI(false);
+    jbLog('Connect failed: blob not found on ANY endpoint (is it saved & public?)');
+    if(!auto)showToast('❌ Blob not found — make sure it is SAVED on jsonblob.com','error');
+    return false;
 }
 
 async function createJsonblob(){
-    try{
-        const res=await fetch('https://jsonblob.com/api/jsonBlob',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify(sanitize(state))
-        });
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const loc=res.headers.get('Location')||res.headers.get('location')||'';
-        const m=loc.match(/([\w-]{8,})\s*$/);   // FIXED: keeps dashes
-        if(!m) throw new Error('No blob ID in response');
-        jbId=m[1];
-        const url='https://jsonblob.com/'+jbId;
-        const input=document.getElementById('jsonblobUrl'); if(input)input.value=url;
-        localStorage.setItem(JB_URL_KEY,url);
-        jbConnected=true; updateSyncUI(true);
-        startJbPoll();
-        jbLog('Created blob '+jbId);
-        showToast('✅ Blob created! All devices will sync now','success');
-        playSuccessSound();
-    }catch(e){
-        jbLog('Create failed: '+e.message+' (create one manually at jsonblob.com instead)');
-        showToast('❌ Auto-create blocked — create one at jsonblob.com & paste URL','error');
+    const bases=['https://jsonblob.com/api/jsonBlob','https://jsonblob.com/api/blob'];
+    for(const base of bases){
+        try{
+            const res=await fetch(base,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(sanitize(state))});
+            if(!res.ok){ jbLog('POST '+base+' -> '+res.status); continue; }
+            const loc=res.headers.get('Location')||res.headers.get('location')||'';
+            const m=loc.match(/([\w-]{8,})\s*$/);
+            if(!m){ jbLog('POST ok but no ID in Location'); continue; }
+            jbId=m[1];
+            const url='https://jsonblob.com/'+jbId;
+            const input=document.getElementById('jsonblobUrl'); if(input)input.value=url;
+            localStorage.setItem(JB_URL_KEY,url);
+            jbConnected=true; updateSyncUI(true); startJbPoll();
+            jbLog('Created blob '+jbId);
+            showToast('✅ Blob created!','success'); playSuccessSound();
+            return;
+        }catch(e){ jbLog('POST '+base+' -> blocked'); }
     }
+    showToast('❌ Auto-create blocked — create & SAVE one on jsonblob.com, paste URL','error');
 }
 
 async function pushToJsonblob(silent){
-    if(!jbConnected||!jbId){ if(!silent)showToast('❌ Not connected to jsonblob','error'); return; }
-    try{
-        const res=await fetch(JB_API+jbId,{
-            method:'PUT',
-            headers:{'Content-Type':'application/json','Accept':'application/json'},
-            body:JSON.stringify(sanitize(state))
-        });
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        jbLastPush=Date.now();
-        jbLog('Pushed config to cloud');
-        if(!silent)showToast('✓ Pushed to all devices','success');
-    }catch(e){
-        jbLog('Push failed: '+e.message);
-        if(!silent)showToast('❌ Push failed: '+e.message,'error');
-    }
+    if(!jbConnected||!jbId){ if(!silent)showToast('❌ Not connected','error'); return; }
+    const r=await jbWrite(jbId,sanitize(state));
+    if(r.ok){ jbLastPush=Date.now(); if(!silent)showToast('✓ Pushed to all devices','success'); }
+    else{ if(!silent)showToast('❌ Push failed (see sync log)','error'); }
 }
 
 async function pullJsonblob(){
     if(!jbConnected||!jbId){ showToast('❌ Not connected','error'); return; }
-    try{
-        const res=await fetch(JB_API+jbId,{headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const data=await res.json();
-        ingestRemote(data,false);
-        jbLog('Pulled config from cloud');
-        showToast('📥 Pulled latest config','success');
-    }catch(e){ showToast('❌ Pull failed: '+e.message,'error'); }
+    const r=await jbRead(jbId);
+    if(r.ok){ ingestRemote(r.data,false); showToast('📥 Pulled latest config','success'); }
+    else showToast('❌ Pull failed','error');
 }
 
 function startJbPoll(){
     if(jbPollTimer)clearInterval(jbPollTimer);
     jbPollTimer=setInterval(async()=>{
         if(!jbConnected||!jbId)return;
-        if(Date.now()-jbLastPush<4000)return; // ignore own echo right after pushing
-        try{
-            const res=await fetch(JB_API+jbId,{headers:{'Accept':'application/json','Cache-Control':'no-cache'}});
-            if(!res.ok)return;
-            const data=await res.json();
-            ingestRemote(data,true);
-        }catch(e){}
+        if(Date.now()-jbLastPush<4000)return;
+        const r=await jbRead(jbId);
+        if(r.ok) ingestRemote(r.data,true);
     },3000);
 }
 
 function disconnectJsonblob(){
-    jbConnected=false; jbId=null;
+    jbConnected=false; jbId=null; jbReadBase=null;
     if(jbPollTimer)clearInterval(jbPollTimer);
     localStorage.removeItem(JB_URL_KEY);
     const input=document.getElementById('jsonblobUrl'); if(input)input.value='';
-    updateSyncUI(false);
-    jbLog('Disconnected');
-    showToast('Disconnected from jsonblob','warning');
+    updateSyncUI(false); jbLog('Disconnected');
+    showToast('Disconnected','warning');
 }
 
 // ================= STATE / LIVE APPLY =================
@@ -654,7 +665,6 @@ function applyState(){
     if(document.getElementById('adminView').classList.contains('active'))loadAdminPanel();
 }
 
-// Same-browser instant sync (tabs on same device)
 let bc=null;
 try{ bc=new BroadcastChannel('greyson_live_v7'); bc.onmessage=e=>{ if(e.data&&e.data.state)ingestRemote(e.data.state,true); }; }catch(e){}
 window.addEventListener('storage',e=>{
@@ -662,7 +672,6 @@ window.addEventListener('storage',e=>{
 });
 function broadcastLocal(){ if(bc){ try{ bc.postMessage({state:sanitize(state)}); }catch(e){} } }
 
-// Called by every admin action
 function commit(){
     saveLocal();
     broadcastLocal();
@@ -893,7 +902,7 @@ function updateLoading(){
             document.getElementById('loadingScreen').classList.add('hidden');
             loadLocal();
             applyState();
-            connectJsonblob(true); // auto-connect if a blob URL was saved
+            connectJsonblob(true);
             startTypingSubtitle();
         },500);
     }
